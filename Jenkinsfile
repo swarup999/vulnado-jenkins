@@ -43,13 +43,13 @@ pipeline {
                 script { 
                     def response = sh(script: """ 
                         #!/bin/bash 
-                        curl -v -X POST \ 
-                        -H "Client-ID: ${CLIENT_ID}" \ 
-                        -H "Client-Secret: ${CLIENT_SECRET}" \ 
-                        -F "projectZipFile=@project.zip" \ 
-                        -F "applicationId=${APPLICATION_ID}" \ 
-                        -F "scanName=Vulnado-JAVA SCA Scan" \ 
-                        -F "language=java" \ 
+                        curl -v -X POST  
+                        -H "Client-ID: ${CLIENT_ID}"  
+                        -H "Client-Secret: ${CLIENT_SECRET}"  
+                        -F "projectZipFile=@project.zip" 
+                        -F "applicationId=${APPLICATION_ID}"  
+                        -F "scanName=Vulnado-JAVA SCA Scan" 
+                        -F "language=java" 
                         "${SCA_API_URL}" 
                     """, returnStdout: true).trim() 
                     def jsonResponse = readJSON(text: response) 
@@ -68,13 +68,13 @@ pipeline {
                 script { 
                     def response = sh(script: """ 
                         #!/bin/bash 
-                        curl -v -X POST \ 
-                        -H "Client-ID: ${CLIENT_ID}" \ 
-                        -H "Client-Secret: ${CLIENT_SECRET}" \ 
-                        -F "projectZipFile=@project.zip" \ 
-                        -F "applicationId=${APPLICATION_ID}" \ 
-                        -F "scanName=Vulnado-JAVA SAST Scan" \ 
-                        -F "language=java" \ 
+                        curl -v -X POST 
+                        -H "Client-ID: ${CLIENT_ID}"  
+                        -H "Client-Secret: ${CLIENT_SECRET}"  
+                        -F "projectZipFile=@project.zip"  
+                        -F "applicationId=${APPLICATION_ID}"  
+                        -F "scanName=Vulnado-JAVA SAST Scan"  
+                        -F "language=java"  
                         "${SAST_API_URL}" 
                     """, returnStdout: true).trim() 
                     def jsonResponse = readJSON(text: response) 
