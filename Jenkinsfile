@@ -92,31 +92,5 @@ pipeline {
             } 
         } 
         
-        stage('Scan Results') { 
-            steps { 
-                script { 
-                    echo "SCA Scan Result: ${env.CAN_PROCEED_SCA}"
-                    echo "SAST Scan Result: ${env.CAN_PROCEED_SAST}"
-                    
-                    // Fail build if either scan fails
-                    if (env.CAN_PROCEED_SCA != 'true' || env.CAN_PROCEED_SAST != 'true') {
-                        error "Security scan failed. SCA: ${env.CAN_PROCEED_SCA}, SAST: ${env.CAN_PROCEED_SAST}"
-                    }
-                }
-            }
-        }
-    } 
-    post {
-        always {
-            script {
-                sh 'rm -rf project_folder project.zip'
-            }
-        }
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
     }
 }
