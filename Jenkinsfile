@@ -33,7 +33,6 @@ pipeline {
                     sh 'mkdir project_folder' 
                     sh 'find . -maxdepth 1 -not -name "." -not -name ".." -not -name ".git" -not -name "venv" -not -name "project_folder" -exec mv {} project_folder/ \\;' 
                     sh 'zip -r project.zip project_folder' 
-
                 } 
             } 
         }
@@ -41,17 +40,19 @@ pipeline {
         stage('Perform SCA Scan') { 
             steps { 
                 script { 
-                    def response = sh(script: """ 
-                        #!/bin/bash 
-                        curl -v -X POST  
-                        -H "Client-ID: ${CLIENT_ID}"  
-                        -H "Client-Secret: ${CLIENT_SECRET}"  
-                        -F "projectZipFile=@project.zip" 
-                        -F "applicationId=${APPLICATION_ID}"  
-                        -F "scanName=Vulnado-JAVA SCA Scan" 
-                        -F "language=java" 
-                        "${SCA_API_URL}" 
-                    """, returnStdout: true).trim() 
+                    def response = sh(script: '''
+                        curl -v -X POST \
+                        -H "Client-ID: ${CLIENT_ID}" \
+                        -H "Client-Secret: ${CLIENT_SECRET}" \
+                        -F "projectZipFile=@project.zip" \
+                        -F "applicationId=${APPLICATION_ID}" \
+                        -F "scanName=Vulnado-JAVA SCA Scan" \
+                        -F "language=java" \
+                        "${SCA_API_URL}"
+                    ''', returnStdout: true).trim() 
+                    
+                    echo "SCA API Response: ${response}"
+                    
                     def jsonResponse = readJSON(text: response) 
                     def canProceedSCA = jsonResponse.canProceed 
                     def vulnsTable = jsonResponse.vulnsTable 
@@ -66,17 +67,19 @@ pipeline {
         stage('Perform SAST Scan') { 
             steps { 
                 script { 
-                    def response = sh(script: """ 
-                        #!/bin/bash 
-                        curl -v -X POST 
-                        -H "Client-ID: ${CLIENT_ID}"  
-                        -H "Client-Secret: ${CLIENT_SECRET}"  
-                        -F "projectZipFile=@project.zip"  
-                        -F "applicationId=${APPLICATION_ID}"  
-                        -F "scanName=Vulnado-JAVA SAST Scan"  
-                        -F "language=java"  
-                        "${SAST_API_URL}" 
-                    """, returnStdout: true).trim() 
+                    def response = sh(script: '''
+                        curl -v -X POST \
+                        -H "Client-ID: ${CLIENT_ID}" \
+                        -H "Client-Secret: ${CLIENT_SECRET}" \
+                        -F "projectZipFile=@project.zip" \
+                        -F "applicationId=${APPLICATION_ID}" \
+                        -F "scanName=Vulnado-JAVA SAST Scan" \
+                        -F "language=java" \
+                        "${SAST_API_URL}"
+                    ''', returnStdout: true).trim() 
+                    
+                    echo "SAST API Response: ${response}"
+                    
                     def jsonResponse = readJSON(text: response) 
                     def canProceedSAST = jsonResponse.canProceed 
                     def vulnsTable = jsonResponse.vulnsTable 
@@ -88,6 +91,29 @@ pipeline {
                 } 
             } 
         } 
-        // Additional stages (e.g., deploy) can be added here 
+        
+        stage('Scan Results') { 
+            steps { 
+                script { 
+                    echo "SCA Scan Result: ${env.CAN_PROCEED_SCA}"
+                    echo "SAST Scan Result: ${env.CAN_PROCEED_SAST}"
+                    
+                    // Fail build if either scan fails
+                    if (env.CAN_PROCEED_SCA != 'true' || env.CAN_PROCEED_SAST != 'true') {
+                        error "Security scan failed. SCA: ${env.CAN_PROCEED_SCA}, SAST: ${env.CAN_PROCEED_SAST}"
+                    }
+                }
+            }
+        }
     } 
-} 
+    post {
+        always {
+            script {
+                sh 'rm -rf project_folder project.zip'
+            }
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
